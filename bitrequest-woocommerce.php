@@ -3,7 +3,7 @@
  * Plugin Name: Bitrequest for WooCommerce
  * Plugin URI:  https://github.com/bitrequest/bitrequest-woocommerce
  * Description: Accept cryptocurrency payments via Bitrequest. Non-custodial, multi-coin, HD wallet (xpub) support with frontend derivation.
- * Version:     1.3.0
+ * Version:     0.1.0
  * Author:      Bitrequest
  * Author URI:  https://bitrequest.io
  * License:     AGPL-3.0
@@ -15,7 +15,7 @@
  */
 if ( ! defined( 'ABSPATH' ) ) exit;
 
-define( 'BITREQUEST_WC_VERSION', '1.3.0' );
+define( 'BITREQUEST_WC_VERSION', '0.1.0' );
 define( 'BITREQUEST_WC_PATH', plugin_dir_path( __FILE__ ) );
 define( 'BITREQUEST_WC_URL', plugin_dir_url( __FILE__ ) );
 
