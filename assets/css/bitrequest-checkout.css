@@ -1,0 +1,199 @@
+/* ── Bitrequest WooCommerce checkout styles ── */
+
+#br-checkout-wrap {
+    max-width: 480px;
+    margin: 0 auto;
+    font-size: 15px;
+}
+
+/* ── Custom dropdown ─────────────────────────── */
+
+.br-dropdown {
+    position: relative;
+    user-select: none;
+}
+
+.br-dropdown-trigger {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 10px 14px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    cursor: pointer;
+    background: #fff;
+    transition: border-color .15s;
+    min-height: 52px;
+}
+
+.br-dropdown:focus,
+.br-dropdown-trigger:focus {
+    outline: none;
+}
+
+.br-dropdown.br-open .br-dropdown-trigger,
+.br-dropdown-trigger:hover {
+    border-color: #2271b1;
+}
+
+.br-dropdown-preview {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+}
+
+.br-dropdown-preview img {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.br-dropdown-preview strong {
+    font-size: 15px;
+    font-weight: 600;
+    color: #333;
+}
+
+.br-dropdown-preview span {
+    font-size: 12px;
+    color: #888;
+}
+
+.br-dropdown-placeholder {
+    color: #aaa;
+    font-size: 14px;
+}
+
+.br-dropdown-arrow {
+    color: #888;
+    font-size: 18px;
+    transition: transform .2s;
+    flex-shrink: 0;
+}
+
+.br-dropdown.br-open .br-dropdown-arrow {
+    transform: rotate(180deg);
+}
+
+.br-dropdown-menu {
+    display: none;
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    background: #fff;
+    border: 2px solid #2271b1;
+    border-radius: 8px;
+    box-shadow: 0 6px 20px rgba(0,0,0,.12);
+    z-index: 999;
+    list-style: none;
+    margin: 0;
+    padding: 4px 0;
+    max-height: 320px;
+    overflow-y: auto;
+}
+
+.br-dropdown.br-open .br-dropdown-menu {
+    display: block;
+}
+
+.br-dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    cursor: pointer;
+    transition: background .1s;
+}
+
+.br-dropdown-item:hover {
+    background: #f5f9ff;
+}
+
+.br-dropdown-item.br-selected {
+    background: #edf4ff;
+}
+
+.br-dropdown-item img {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.br-item-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: #333;
+    flex: 1;
+}
+
+.br-item-symbol {
+    font-size: 12px;
+    color: #888;
+    text-transform: uppercase;
+}
+
+/* ── Pay button area ──────────────────────────── */
+
+#br-pay-area {
+    margin-top: 16px;
+}
+
+#br-waiting {
+    display: none;
+    align-items: center;
+    gap: .6em;
+    padding: .7em 1em;
+    background: #f0f6ff;
+    border-left: 3px solid #2271b1;
+    border-radius: 4px;
+    margin-bottom: 10px;
+    font-size: .9em;
+}
+
+.br-spinner {
+    display: inline-block;
+    width: 15px;
+    height: 15px;
+    border: 2px solid #2271b1;
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: br-spin .7s linear infinite;
+    flex-shrink: 0;
+}
+
+#br-notice {
+    display: none;
+    padding: .7em 1em;
+    border-radius: 4px;
+    margin-bottom: 10px;
+    font-size: .9em;
+}
+
+.br-notice--error { background:#fef0f0; border-left:3px solid #cc1818; color:#cc1818; }
+.br-notice--info  { background:#f0f6ff; border-left:3px solid #2271b1; color:#1e4a7a; }
+
+/* ── WC payment method icon (checkout page) ─── */
+.woocommerce-checkout .payment_method_bitrequest img.br-method-icon {
+    height: 24px;
+    vertical-align: middle;
+    margin-left: 4px;
+}
+
+@keyframes br-spin { to { transform: rotate(360deg); } }
+
+/* ── Checkout page: scale down gateway icon ─── */
+.wc_payment_method.payment_method_bitrequest label img,
+li.payment_method_bitrequest img,
+.woocommerce-checkout .payment_method_bitrequest img {
+    max-height: 28px !important;
+    max-width: 28px !important;
+    width: auto !important;
+    vertical-align: middle;
+    margin-left: 6px;
+}
+

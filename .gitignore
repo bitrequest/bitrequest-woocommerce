@@ -1,0 +1,24 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Editors
+.idea/
+.vscode/
+*.swp
+*~
+.nova/
+
+# OS / archive junk
+__MACOSX/
+Thumbs.db
+
+# Build artifacts (in case you ever add a build step)
+node_modules/
+vendor/
+
+# Local dev / temp
+*.log
+*.bak
+.env
