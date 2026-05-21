@@ -1137,11 +1137,11 @@ public function process_admin_options() {
         $br_base = $this->get_br_base();
 
         // Bitrequest PWA libs (in dependency order)
-        wp_enqueue_script( 'br-sjcl',         $br_base . 'assets_js_lib_sjcl.js',                 [],          null, true );
-        wp_enqueue_script( 'br-crypto-utils',  $br_base . 'assets_js_lib_crypto_utils.js',          ['br-sjcl'], null, true );
-        wp_enqueue_script( 'br-bip39-utils',   $br_base . 'assets_js_lib_bip39_utils.js',           ['br-crypto-utils'], null, true );
-        wp_enqueue_script( 'br-xmr-utils',     $br_base . 'assets_js_lib_xmr_utils.js',             ['br-crypto-utils'], null, true );
-        wp_enqueue_script( 'br-assets',        $br_base . 'assets_js_bitrequest_assets.js',         [], null, true );
+        wp_enqueue_script( 'br-sjcl',         $br_base . 'assets/js/lib/sjcl.js',                 [],          null, true );
+        wp_enqueue_script( 'br-crypto-utils',  $br_base . 'assets/js/lib/crypto_utils.js',          ['br-sjcl'], null, true );
+        wp_enqueue_script( 'br-bip39-utils',   $br_base . 'assets/js/lib/bip39_utils.js',           ['br-crypto-utils'], null, true );
+        wp_enqueue_script( 'br-xmr-utils',     $br_base . 'assets/js/lib/xmr_utils.js',             ['br-crypto-utils'], null, true );
+        wp_enqueue_script( 'br-assets',        $br_base . 'assets/js/bitrequest/assets.js',         [], null, true );
         wp_enqueue_script( 'br-checkout-lib',  $br_base . 'assets_js_lib_bitrequest_checkout.js',   [], null, true );
         wp_enqueue_style(  'br-checkout-css',  $br_base . 'assets_styles_lib_bitrequest.css',       [], null );
 
@@ -1221,11 +1221,11 @@ public function process_admin_options() {
         if ( strpos( $hook, 'wc-settings' ) === false && strpos( $hook, 'woocommerce_page' ) === false ) return;
 
         $br_base = $this->get_br_base();
-        wp_enqueue_script( 'br-sjcl',        $br_base . 'assets_js_lib_sjcl.js',       [], null, true );
-        wp_enqueue_script( 'br-crypto-utils', $br_base . 'assets_js_lib_crypto_utils.js', ['br-sjcl'], null, true );
-        wp_enqueue_script( 'br-bip39-utils',  $br_base . 'assets_js_lib_bip39_utils.js', ['br-crypto-utils'], null, true );
-        wp_enqueue_script( 'br-xmr-utils',    $br_base . 'assets_js_lib_xmr_utils.js',   ['br-crypto-utils'], null, true );
-        wp_enqueue_script( 'br-assets',       $br_base . 'assets_js_bitrequest_assets.js', [], null, true );
+        wp_enqueue_script( 'br-sjcl',        $br_base . 'assets/js/lib/sjcl.js',       [], null, true );
+        wp_enqueue_script( 'br-crypto-utils', $br_base . 'assets/js/lib/crypto_utils.js', ['br-sjcl'], null, true );
+        wp_enqueue_script( 'br-bip39-utils',  $br_base . 'assets/js/lib/bip39_utils.js', ['br-crypto-utils'], null, true );
+        wp_enqueue_script( 'br-xmr-utils',    $br_base . 'assets/js/lib/xmr_utils.js',   ['br-crypto-utils'], null, true );
+        wp_enqueue_script( 'br-assets',       $br_base . 'assets/js/bitrequest/assets.js', [], null, true );
         // Checkout lib + CSS for Test button → request panel overlay
         wp_enqueue_script( 'br-checkout-lib', $br_base . 'assets_js_lib_bitrequest_checkout.js', [], null, true );
         wp_enqueue_style(  'br-checkout-css', $br_base . 'assets_styles_lib_bitrequest.css',     [], null );
