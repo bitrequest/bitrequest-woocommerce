@@ -324,7 +324,7 @@
         if (coin === "lightning") {
             const imp       = cfg.imp || "spark";
             const proxy     = proxyToLnurl(cfg.lnurl_proxy || "");
-            const spark_key = cfg.spark_privkey || "";
+            const spark_nid = cfg.spark_nid || "";   // 10-char id, not key material
             const lid       = randomHex(5);   // unique 10-hex per payment — proxy tracking key
             const pid       = randomHex(8);   // random 16-hex pid per order
 
@@ -347,7 +347,7 @@
                 proxy: proxy,
                 pid:   pid
             };
-            if (imp === "spark" && spark_key) d_obj.nid = spark_key.slice(0, 10);
+            if (imp === "spark" && spark_nid) d_obj.nid = spark_nid;
         } else {
             lightningPid = null;
             d_obj = {

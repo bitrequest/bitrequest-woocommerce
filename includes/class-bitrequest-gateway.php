@@ -993,7 +993,10 @@ public function process_admin_options() {
         $enabled = $this->get_enabled_coins();
         $defs    = self::coin_defs();
 
-        $order->update_meta_data( '_bitrequest_payment_secret', wp_generate_password( 32, false ) );
+        // 16 random bytes -> 32 hex chars. random_bytes() is unconditionally a CSPRNG,
+        // unlike wp_generate_password(), which is not guaranteed cryptographic on
+        // every host. This secret is the per-order auth token for verify_tx.
+        $order->update_meta_data( '_bitrequest_payment_secret', bin2hex( random_bytes( 16 ) ) );
 
         // Pre-store enabled coins as a hint for the orders list column
         // The actual coin is selected by the customer on the order-pay page
@@ -1189,7 +1192,10 @@ public function process_admin_options() {
                 'xpub'          => $xpub,
                 'index'         => $index,
                 'used_addrs'    => self::is_eth_family( $coin ) ? [] : ( $used_addrs_all[ $coin ] ?? [] ),
-                'spark_privkey' => $cfg['spark_privkey'] ?? '',
+                // Only the 10-char `nid` the checkout JS actually sends to the
+                // iframe — never the full Spark identity private key. This array
+                // is printed into the customer-facing page via wp_localize_script.
+                'spark_nid'     => substr( (string) ( $cfg['spark_privkey'] ?? '' ), 0, 10 ),
                 'lnurl_proxy'   => $cfg['lnurl_proxy']   ?? '',
                 'imp'           => $cfg['imp']           ?? '',
                 'viewkey'       => $cfg['viewkey']       ?? '',

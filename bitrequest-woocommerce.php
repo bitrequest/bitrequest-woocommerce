@@ -6,12 +6,13 @@
  * Version:     0.1.0
  * Author:      Bitrequest
  * Author URI:  https://bitrequest.io
- * License:     AGPL-3.0
+ * License:     GPLv2 or later
+ * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain: bitrequest-woocommerce
  * Requires at least: 5.8
  * Requires PHP: 7.4
  * WC requires at least: 5.0
- * WC tested up to: 9.0
+ * WC tested up to: 10.7.0
  */
 if ( ! defined( 'ABSPATH' ) ) exit;
 
