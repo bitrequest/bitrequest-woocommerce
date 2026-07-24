@@ -11,6 +11,7 @@
  * Text Domain: bitrequest-for-woocommerce
  * Requires at least: 5.8
  * Requires PHP: 7.4
+ * Requires Plugins: woocommerce
  * WC requires at least: 5.0
  * WC tested up to: 10.7.0
  */
@@ -934,7 +935,7 @@ function bitrequest_render_order_meta_box( $post_or_order ) {
 }
 
 // ─── Admin: inject coin icons into payments OVERVIEW list (React-compatible) ──
-add_action( 'admin_footer', 'bitrequest_inject_payment_page_icons' );
+add_action( 'admin_enqueue_scripts', 'bitrequest_inject_payment_page_icons' );
 
 function bitrequest_inject_payment_page_icons() {
     // Only on the checkout overview tab — NOT on the individual gateway settings page
@@ -957,56 +958,9 @@ function bitrequest_inject_payment_page_icons() {
                . "title='{$defs[$c][1]}' alt='{$defs[$c][1]}' "
                . "style='height:24px;width:24px;border-radius:50%;margin:0 2px;vertical-align:middle'>";
     }
-    ?>
-    <script>
-    (function() {
-        var icons = <?php echo wp_json_encode( $imgs ); ?>;
-
-        function tryInject() {
-            // Walk all text nodes — finds the title in both classic and React-rendered lists
-            var walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null, false);
-            var node, found = null;
-            while ((node = walker.nextNode())) {
-                if (node.textContent.trim() === 'Bitrequest' && !node.parentElement.dataset.brDone) {
-                    found = node.parentElement;
-                    break;
-                }
-            }
-            if (!found) return false;
-            found.dataset.brDone = '1';
-
-            // Find the nearest list-item or card container
-            var card = found.closest('li') || found.closest('[class]');
-            if (!card) card = found.parentElement;
-
-            // Find the description paragraph inside the card
-            var desc = card.querySelector('p');
-            if (!desc) return false;
-
-            // Append icons on a new line below the description
-            var wrap = document.createElement('span');
-            wrap.style.cssText = 'display:block;margin-top:5px;line-height:1.6';
-            wrap.innerHTML = icons;
-            desc.insertAdjacentElement('afterend', wrap);
-            return true;
-        }
-
-        // Use MutationObserver for React async rendering
-        var injected = false;
-        var observer = new MutationObserver(function() {
-            if (!injected && tryInject()) {
-                injected = true;
-                observer.disconnect();
-            }
-        });
-        observer.observe(document.body, { childList: true, subtree: true });
-
-        // Also try immediately and stop observing after 10s
-        if (tryInject()) { injected = true; observer.disconnect(); }
-        setTimeout(function() { observer.disconnect(); }, 10000);
-    })();
-    </script>
-    <?php
+    wp_register_script( 'bitrequest-payment-icons', BITREQUEST_WC_URL . 'assets/js/bitrequest-payment-icons.js', [], BITREQUEST_WC_VERSION, true );
+    wp_localize_script( 'bitrequest-payment-icons', 'BR_PAY_ICONS', [ 'html' => $imgs ] );
+    wp_enqueue_script( 'bitrequest-payment-icons' );
 }
 
 // ─── Orders list: coin icon + txid column ────────────────────────────────────
@@ -1092,15 +1046,18 @@ function bitrequest_echo_order_column_content( WC_Order $order ): void {
     echo '</span>';
 }
 
-// Column width
-add_action( 'admin_head', function () {
+// Orders-list column width. Registered as a handle-only stylesheet so the rules
+// go through wp_add_inline_style() rather than a raw <style> tag.
+add_action( 'admin_enqueue_scripts', function () {
     $screen = get_current_screen();
     if ( ! $screen ) return;
     if ( strpos( $screen->id, 'shop_order' ) === false && strpos( $screen->id, 'woocommerce_page_wc-orders' ) === false ) return;
-    echo '<style>
-        .column-bitrequest_tx { width: 80px; text-align: center; }
-        .manage-column.column-bitrequest_tx { text-align: center; }
-    </style>';
+    wp_register_style( 'bitrequest-orders-column', false, [], BITREQUEST_WC_VERSION );
+    wp_enqueue_style( 'bitrequest-orders-column' );
+    wp_add_inline_style( 'bitrequest-orders-column',
+        '.column-bitrequest_tx{width:80px;text-align:center}'
+      . '.manage-column.column-bitrequest_tx{text-align:center}'
+    );
 } );
 
 // ─── Constrain gateway icon size on checkout ─────────────────────────────────
@@ -1216,16 +1173,18 @@ function bitrequest_order_details_coin_badge( WC_Order $order ): void {
 
     $gw         = WC()->payment_gateways()->payment_gateways()['bitrequest'] ?? null;
     $cfg        = ( $gw && method_exists( $gw, 'get_coin_configs' ) ) ? ( $gw->get_coin_configs()[ $coin ] ?? [] ) : [];
-    [ $cfg_label, $cfg_symbol, $cfg_cmc_id ] = WC_Gateway_Bitrequest::coin_display_info( $coin, $cfg );
+    [ $cfg_label, $cfg_symbol, ] = WC_Gateway_Bitrequest::coin_display_info( $coin, $cfg );
 
     $meta_sym   = $order->get_meta( '_bitrequest_ccsymbol' )       ?: '';
     $meta_name  = $order->get_meta( '_bitrequest_currency_name' )  ?: '';
     $label      = $meta_name ?: $cfg_label;
     $symbol     = $meta_sym  ? strtoupper( $meta_sym ) : $cfg_symbol;
-    $cmc_id     = (int) ( $order->get_meta( '_bitrequest_cmc_id' ) ?: $cfg_cmc_id );
+    // Locally bundled icon only — the order-received page must not pull images
+    // from a third-party CDN, which would expose the customer's IP to it.
+    $icon_url   = WC_Gateway_Bitrequest::local_icon_url( $coin );
     echo '<p style="margin:8px 0;font-size:14px"><strong>Paid with:</strong> ';
-    if ( $cmc_id ) {
-        echo '<img src="' . esc_url( "https://s2.coinmarketcap.com/static/img/coins/64x64/{$cmc_id}.png" ) . '" alt=""'
+    if ( $icon_url ) {
+        echo '<img src="' . esc_url( $icon_url ) . '" alt=""'
            . ' style="width:20px;height:20px;border-radius:50%;vertical-align:middle;margin-right:6px">';
     }
     echo esc_html( "{$label} ({$symbol})" ) . '</p>';

@@ -1,0 +1,82 @@
+/* Bitrequest for WooCommerce — admin settings (coin table) styles.
+   Extracted from render_coin_table(); enqueued in enqueue_admin_assets(). */
+
+.br-coin-table{border-collapse:collapse;width:100%;font-size:13px;table-layout:fixed!important}
+.br-coin-table th{text-align:left;padding:6px 8px;background:#f9f9f9;border-bottom:2px solid #ddd}
+.br-coin-table td{padding:10px 8px;border-bottom:1px solid #eee;vertical-align:top}
+.br-coin-table td:first-child{padding-top:14px;white-space:nowrap}
+.br-coin-table input[type=checkbox]{margin:4px 0 0 0}
+.br-coin-table img{width:22px;height:22px;vertical-align:middle;margin-right:5px;border-radius:50%}
+.br-coin-table input[type=text]{width:100%;font-size:12px}
+/* Utility: indent to match input column (past Test button + gap) */
+.br-inset{margin-left:36px}
+.br-seed-box{padding:14px 16px;background:#f0f6ff;border:1px solid #b3d4f5;border-radius:6px;margin-bottom:16px}
+.br-seed-box textarea{width:100%!important;box-sizing:border-box;font-family:monospace;font-size:13px;margin:16px 0!important;padding:12px 16px!important;text-align:center}
+.br-derive-section{margin-top:16px;padding:12px;background:#fff8e1;border:1px solid #ffe082;border-radius:4px}
+.br-addr-row{display:flex;align-items:center;gap:8px;flex-wrap:nowrap}
+.br-addr-row input[type=text]{flex:1 1 auto!important;min-width:0;width:auto!important}
+.br-test-btn{flex-shrink:0;color:#2271b1;text-decoration:underline;cursor:pointer;font-size:12px}
+.br-test-btn.disabled{color:#999;cursor:not-allowed;text-decoration:none}
+.br-err{color:#cc0000;font-size:11px;flex-shrink:0;white-space:nowrap}
+
+/* Mobile (WordPress admin breaks at 782px) — each row becomes a full-width card.
+   Must explicitly kill table-layout:fixed + colgroup col widths otherwise the
+   fixed-layout constraints leak through and squeeze the cards. */
+@media (max-width:782px){
+    .br-coin-table{display:block;width:100%;table-layout:auto!important;font-size:14px}
+    .br-coin-table colgroup,.br-coin-table col{display:none!important}
+    .br-coin-table thead{display:none}
+    .br-coin-table tbody{display:block;width:100%}
+    .br-coin-table tbody tr{
+        display:block;width:100%;box-sizing:border-box;
+        border:1px solid #ddd;border-radius:6px;
+        padding:10px 12px;margin-bottom:8px;background:#fff
+    }
+    .br-coin-table tbody td{display:block;width:100%;padding:4px 0;border:none}
+    .br-coin-table tbody td:first-child{
+        display:inline-flex;align-items:center;padding:0;width:auto
+    }
+    .br-coin-table tbody td:nth-child(2){
+        display:inline-block;float:right;padding:0;text-align:right;width:auto
+    }
+    .br-coin-table tbody td:nth-child(2) input[type=checkbox]{margin:0}
+    .br-coin-table tbody td:nth-child(3){
+        display:block;clear:both;padding-top:10px;width:100%
+    }
+    .br-coin-table tbody td:first-child img{width:20px;height:20px}
+    .br-err{white-space:normal;flex-basis:100%;margin-top:2px}
+    .br-addr-row input[type=text]{font-size:14px;padding:6px}
+    .br-seed-box textarea{font-size:14px;text-align:left}
+    /* Wider, easier-to-tap nav buttons in card mode */
+    .br-coin-table .br-addr-prev,
+    .br-coin-table .br-addr-next{padding:4px 16px!important;font-size:16px!important}
+}
+
+/* Description textarea: match width of other text inputs, keep vertical resize */
+#woocommerce_bitrequest_description{max-width:25em;resize:vertical}
+
+/* Dynamic ERC-20 row delete button */
+.br-delete-btn{flex-shrink:0;background:none;border:none;color:#cc0000;font-size:18px;font-weight:bold;cursor:pointer;padding:0 6px;line-height:1;opacity:0.6}
+.br-delete-btn:hover{opacity:1}
+
+/* Add-token modal */
+.br-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:100000;display:none;align-items:center;justify-content:center}
+.br-modal-overlay.br-show{display:flex}
+.br-modal{background:#fff;border-radius:10px;padding:22px 24px;width:460px;max-width:92vw;box-shadow:0 12px 36px rgba(0,0,0,0.3)}
+.br-modal h3{margin:0 0 14px;font-size:15px;display:flex;align-items:center;gap:10px;color:#222}
+.br-modal-dollar{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:#10b981;color:#fff;font-weight:bold;font-size:14px;font-family:monospace}
+.br-selectbox{position:relative;margin-bottom:18px}
+.br-selectbox input{width:100%;padding:10px 42px 10px 12px;border:1px solid #ccc;border-radius:4px;font-size:14px;box-sizing:border-box}
+.br-hamburger{position:absolute;right:10px;top:50%;transform:translateY(-50%);cursor:pointer;color:#10b981;font-size:18px;user-select:none;padding:4px 6px;line-height:1}
+.br-options{position:absolute;top:calc(100% + 2px);left:0;right:0;max-height:280px;overflow-y:auto;border:1px solid #ddd;border-radius:4px;background:#fff;display:none;z-index:1;box-shadow:0 6px 14px rgba(0,0,0,0.12)}
+.br-options.br-show{display:block}
+.br-option{padding:10px 14px;cursor:pointer;display:flex;align-items:center;gap:10px;border-bottom:1px solid #f0f0f0;font-size:14px;color:#444}
+.br-option:last-child{border-bottom:none}
+.br-option:hover,.br-option.br-highlight{background:#f5f5f5}
+.br-option img{width:22px;height:22px;border-radius:50%;flex-shrink:0}
+.br-option.br-empty{color:#888;cursor:default;font-style:italic}
+.br-option.br-empty:hover{background:transparent}
+.br-modal-btns{text-align:right}
+.br-modal-btns button{margin-left:14px;background:none;border:none;color:#10b981;font-weight:600;font-size:13px;cursor:pointer;padding:6px 10px;letter-spacing:0.5px}
+.br-modal-btns button:hover{color:#0e9f74}
+.br-modal-btns button:disabled{color:#bbb;cursor:not-allowed}

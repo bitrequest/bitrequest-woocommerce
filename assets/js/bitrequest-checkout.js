@@ -185,7 +185,8 @@
         // from a previous coin) — the new selection is a fresh attempt.
         if (noticeEl) noticeEl.style.display = "none";
         items.forEach((i) => i.classList.toggle("br-selected", i.dataset.coin === coin));
-        preview.innerHTML = "<img src='" + icon + "' alt=''> <strong>" + label + "</strong> <span>" + symbol + "</span>";
+        preview.innerHTML = (icon ? "<img src='" + icon + "' alt=''> " : "") +
+            "<strong>" + label + "</strong> <span>" + symbol + "</span>";
         payBtn.classList.remove("br_checkout");
         payBtn.setAttribute("href", "#");
         payBtn.textContent = "Resolving address…";

@@ -30,19 +30,45 @@ Bitcoin, Lightning Network, Litecoin, Dogecoin, Dash, Bitcoin Cash, Kaspa, Moner
 * Optional webhook (JSON POST) when a payment is detected.
 * Compatible with WooCommerce HPOS and the Block Checkout, as well as classic checkout.
 
-**External service**
-
-This plugin loads the Bitrequest payment app and its libraries from a Bitrequest-hosted origin (by default `https://bitrequest.github.io`), and opens that app in a checkout window so customers can pay. Payment detection and cryptographic address derivation happen there, in the customer's browser. No order data, customer data, or analytics are sent to Bitrequest — the app only reads the public blockchain to detect incoming payments.
-
-You can point the plugin at your own self-hosted copy of the Bitrequest app via the "Bitrequest URL" setting. The app is open source: https://github.com/bitrequest/bitrequest.github.io
-
-**Note on Monero**
-
-Monero payment detection requires your wallet's *secret view key*, which the plugin passes to the payment app so it can scan the blockchain for your incoming payments. A view key can only *read* incoming transactions — it can never spend or move funds. However, it is included in the checkout page your customers load, so treat it as public: anyone who reaches your checkout can, in principle, see incoming payments to that Monero address. Use a dedicated Monero account for your shop if that matters to you. All other supported currencies detect payments from public blockchain data only and require no key of any kind.
-
-For Lightning, the plugin talks to a payment proxy that you configure and control (your own node, or a service you choose). Ethereum and ERC-20 payment detection relies on public blockchain indexers (such as Etherscan/Alchemy), consistent with how the wider Ethereum ecosystem operates. Funds remain non-custodial throughout.
-
 Source code: https://github.com/bitrequest/bitrequest-woocommerce
+
+== External services ==
+
+This plugin relies on the following external services. No customer data is sent to any of them.
+
+**1. Bitrequest payment app (bitrequest.github.io)**
+
+What it is: the open-source Bitrequest payment application, which performs cryptographic address derivation and detects incoming payments by reading public blockchain data. It provides the checkout the customer interacts with.
+
+What is sent and when: when a customer reaches the payment step, the plugin loads the app's JavaScript and CSS from this origin and opens the app in a checkout window. The request URL carries the order number, the store name, the amount, the chosen cryptocurrency and the receiving address derived for that order. No customer name, email, address or other personal data is transmitted. Loading the assets exposes the visitor's IP address and user agent to the host, as with any externally hosted resource.
+
+Why it is required: the app and its libraries must be served from the same origin the checkout window points at, because the plugin verifies the window's origin before accepting a payment result from it. Splitting them would break that check.
+
+Self-hosting: the "Bitrequest URL" setting accepts any host serving an unmodified build, so you can point the plugin at your own copy and remove this dependency entirely.
+
+Provider: Bitrequest. Terms and conditions: https://github.com/bitrequest/bitrequest.github.io/wiki/Terms-and-conditions - Privacy / disclaimer: https://www.bitrequest.io/privacy/
+
+**2. CoinMarketCap image CDN (s2.coinmarketcap.com)**
+
+What it is: a public CDN serving cryptocurrency logo images.
+
+What is sent and when: coin and token icons are loaded in the WordPress admin only - on the gateway settings screen, the orders list, the order edit screen and the payments overview. Loading an image exposes the logged-in administrator's IP address and user agent to CoinMarketCap. No order, store or customer data is sent, and no request is made from any customer-facing page.
+
+Why it is required: the ERC-20 token picker covers roughly a thousand tokens, so their icons cannot practically be bundled with the plugin. Customer-facing pages use only icons bundled inside the plugin, so a shopper's browser never contacts this service.
+
+Provider: CoinMarketCap Mgmt Limited. Terms of use: https://coinmarketcap.com/terms/ - Privacy policy: https://coinmarketcap.com/privacy/
+
+**3. Lightning proxy (optional, merchant-configured)**
+
+Only used if you enable Lightning. The plugin sends invoice status lookups to the proxy URL you enter in the settings - a host you choose and control, such as your own node or a service you have an account with. Requests contain the Lightning payment identifier for the order and nothing else. No proxy is contacted if Lightning is left disabled, and the plugin has no default proxy.
+
+**4. Webhook URL (optional, merchant-configured)**
+
+If you set a Webhook URL, the plugin POSTs order and transaction data to that address when a payment is detected. This is your own endpoint; leave the field empty and no request is made.
+
+**Note on block explorers**
+
+Explorer links shown in the admin and in order emails are ordinary hyperlinks. Nothing is sent to a block explorer unless someone clicks one.
 
 == Installation ==
 
@@ -75,6 +101,10 @@ Yes. Add USDT, USDC, or other ERC-20 tokens in the settings, on Ethereum mainnet
 = Does Monero need my private key? =
 
 It needs your secret *view* key, which can only read incoming transactions — it can never spend funds. Because it is included in the checkout page, treat it as public and consider using a dedicated Monero account for your shop. No other supported currency requires a key.
+
+= Does the plugin send anything to third parties? =
+
+Customer-facing pages contact only the Bitrequest payment app, which is required to display the checkout and detect payment; it can be self-hosted to remove even that. Coin icons in the WordPress admin are loaded from CoinMarketCap. See the "External services" section for full details.
 
 = How are refunds handled? =
 

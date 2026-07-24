@@ -22,7 +22,7 @@ Accept Bitcoin, Lightning, Monero, Ethereum and more on your WooCommerce store. 
 ### 1. Install the plugin
 
 Either:
-- Download the latest release from [the releases page](https://github.com/bitrequest/bitrequest-woocommerce/archive/refs/heads/main.zip) and upload the zip via **WordPress → Plugins → Add New → Upload Plugin**, or
+- Download the latest release from [code / Download ZIP](https://github.com/bitrequest/bitrequest-woocommerce) and upload the zip via **WordPress → Plugins → Add New → Upload Plugin**, or
 - Install directly from your WordPress admin.
 
 Activate the plugin.
