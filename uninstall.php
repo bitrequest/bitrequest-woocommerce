@@ -39,36 +39,44 @@ global $wpdb;
 // ── 1. Plugin options ────────────────────────────────────────────────────────
 // Mirrors every option_name the plugin ever calls update_option/add_option on.
 // Keep this list in sync with new options if any get added later.
-$options = [
+$bitrequest_options = [
     'bitrequest_coin_configs',          // coin table: xpubs, addresses, indexes, l2 selections
     'bitrequest_used_addresses',        // rotation history (per-coin address ledger)
     'bitrequest_xpub_indices',          // current rotation pointer per xpub
     'woocommerce_bitrequest_settings',  // WC gateway settings (URL, confirmations, webhook, show_qr, …)
 ];
-foreach ( $options as $opt ) {
-    delete_option( $opt );
-    delete_site_option( $opt ); // multisite-safe
+foreach ( $bitrequest_options as $bitrequest_opt ) {
+    delete_option( $bitrequest_opt );
+    delete_site_option( $bitrequest_opt ); // multisite-safe
 }
 
 // ── 2. Checkout lock transients ──────────────────────────────────────────────
 // Locks are stored as `bitrequest_checkout_<coin>` transients (15-minute TTL).
 // WP stores transients as two rows each: `_transient_<key>` and
 // `_transient_timeout_<key>`. Wipe both.
+// Transients are matched by LIKE pattern, which has no core API. Runs once at
+// uninstall; there is no object cache left to invalidate.
+// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 $wpdb->query(
     "DELETE FROM {$wpdb->options}
      WHERE option_name LIKE '\\_transient\\_bitrequest\\_checkout\\_%'
         OR option_name LIKE '\\_transient\\_timeout\\_bitrequest\\_checkout\\_%'"
 );
+// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 
 // Multisite: also clear sitemeta-level transients if any plugin code ever
 // promoted them. Defensive — current code uses get_transient/set_transient
 // which is single-site, but cheap to cover.
 if ( is_multisite() ) {
-    $wpdb->query(
+    // Transients are matched by LIKE pattern, which has no core API. Runs once at
+// uninstall; there is no object cache left to invalidate.
+// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+$wpdb->query(
         "DELETE FROM {$wpdb->sitemeta}
          WHERE meta_key LIKE '\\_site\\_transient\\_bitrequest\\_checkout\\_%'
             OR meta_key LIKE '\\_site\\_transient\\_timeout\\_bitrequest\\_checkout\\_%'"
     );
+    // phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 }
 
 // ── 3. Scheduled events ──────────────────────────────────────────────────────

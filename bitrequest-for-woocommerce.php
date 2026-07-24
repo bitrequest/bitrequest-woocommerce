@@ -8,7 +8,7 @@
  * Author URI:  https://bitrequest.io
  * License:     GPLv2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
- * Text Domain: bitrequest-woocommerce
+ * Text Domain: bitrequest-for-woocommerce
  * Requires at least: 5.8
  * Requires PHP: 7.4
  * WC requires at least: 5.0
@@ -125,8 +125,8 @@ function bitrequest_handle_verify_tx() {
     check_ajax_referer( 'bitrequest_checkout', 'nonce' );
 
     $order_id        = absint( $_POST['order_id'] ?? 0 );
-    $provided_secret = sanitize_text_field( $_POST['payment_secret'] ?? '' );
-    $txhash          = sanitize_text_field( $_POST['txhash'] ?? '' );
+    $provided_secret = sanitize_text_field( wp_unslash( $_POST['payment_secret'] ?? '' ) );
+    $txhash          = sanitize_text_field( wp_unslash( $_POST['txhash'] ?? '' ) );
 
     if ( ! $order_id || ! $txhash ) wp_send_json_error( [ 'message' => 'Missing parameters.' ] );
 
@@ -145,7 +145,7 @@ function bitrequest_handle_verify_tx() {
 
     // ── Security: lock coin — use stored value, reject if client tries to
     //    downgrade to a non-verifiable coin ────────────────────────────────────
-    $client_coin  = sanitize_text_field( $_POST['coin'] ?? '' );
+    $client_coin  = sanitize_text_field( wp_unslash( $_POST['coin'] ?? '' ) );
     $stored_coin  = $order->get_meta( '_bitrequest_payment' ) ?: '';
     $coin         = $stored_coin ?: $client_coin;
 
@@ -173,6 +173,9 @@ function bitrequest_handle_verify_tx() {
     // synthesized polling format since those carry a unique requestid by
     // construction and a string match across pseudo-hashes is meaningless.
     if ( strpos( $txhash, '|' ) === false ) {
+        // A meta lookup is the only way to detect a txhash already credited to another
+        // order. Bounded by limit=1, returns ids only, and runs once per payment.
+        // phpcs:disable WordPress.DB.SlowDBQuery.slow_db_query_meta_key, WordPress.DB.SlowDBQuery.slow_db_query_meta_value, WordPressVIPMinimum.Performance.WPQueryParams.PostNotIn_exclude
         $existing = wc_get_orders( [
             'meta_key'   => '_bitrequest_txhash',
             'meta_value' => $txhash,
@@ -180,6 +183,7 @@ function bitrequest_handle_verify_tx() {
             'exclude'    => [ $order_id ],
             'return'     => 'ids',
         ] );
+        // phpcs:enable WordPress.DB.SlowDBQuery.slow_db_query_meta_key, WordPress.DB.SlowDBQuery.slow_db_query_meta_value, WordPressVIPMinimum.Performance.WPQueryParams.PostNotIn_exclude
         if ( ! empty( $existing ) ) {
             $other_id = (int) $existing[0];
             $order->add_order_note( "Bitrequest: rejected verify_tx — txhash {$txhash} already used by order #{$other_id}." );
@@ -188,7 +192,7 @@ function bitrequest_handle_verify_tx() {
     }
 
     // ── Security: lock address — never let client override a stored address ──
-    $client_address = sanitize_text_field( $_POST['address'] ?? '' );
+    $client_address = sanitize_text_field( wp_unslash( $_POST['address'] ?? '' ) );
     $stored_address = $order->get_meta( '_bitrequest_address' ) ?: '';
     $address        = $stored_address; // default to stored
 
@@ -213,7 +217,7 @@ function bitrequest_handle_verify_tx() {
     }
 
     // ── Security: sanity-check ccval against WC order total ──────────────────
-    $client_ccval   = sanitize_text_field( $_POST['ccval'] ?? '' );
+    $client_ccval   = sanitize_text_field( wp_unslash( $_POST['ccval'] ?? '' ) );
     $stored_ccval   = $order->get_meta( '_bitrequest_crypto_amount' ) ?: '';
     $ccval          = $stored_ccval ?: $client_ccval;
     $order_total    = (float) $order->get_total();
@@ -233,22 +237,22 @@ function bitrequest_handle_verify_tx() {
         '_bitrequest_txhash'          => $txhash,
         '_bitrequest_address'         => $address,
         '_bitrequest_crypto_amount'   => $ccval,
-        '_bitrequest_fiat_amount'     => sanitize_text_field( $_POST['fiat_amount'] ?? '' ),
-        '_bitrequest_received_amount' => sanitize_text_field( $_POST['received_amount'] ?? '' ),
-        '_bitrequest_ccsymbol'        => sanitize_text_field( $_POST['ccsymbol'] ?? '' ),
-        '_bitrequest_currency_name'   => sanitize_text_field( $_POST['currency_name'] ?? '' ),
+        '_bitrequest_fiat_amount'     => sanitize_text_field( wp_unslash( $_POST['fiat_amount'] ?? '' ) ),
+        '_bitrequest_received_amount' => sanitize_text_field( wp_unslash( $_POST['received_amount'] ?? '' ) ),
+        '_bitrequest_ccsymbol'        => sanitize_text_field( wp_unslash( $_POST['ccsymbol'] ?? '' ) ),
+        '_bitrequest_currency_name'   => sanitize_text_field( wp_unslash( $_POST['currency_name'] ?? '' ) ),
         // L2 chain name snapshot — "polygon pos" / "arbitrum one" /
         // "binance smart chain" / "base", or empty for L1/non-EVM. Drives
         // the explorer URL routing for historical orders so they always
         // point at the chain the customer actually paid on.
-        '_bitrequest_eth_layer2'      => sanitize_text_field( $_POST['eth_layer2'] ?? '' ),
-        '_bitrequest_cmc_id'          => sanitize_text_field( $_POST['cmc_id'] ?? '' ),
-        '_bitrequest_status'          => sanitize_text_field( $_POST['status'] ?? '' ),
-        '_bitrequest_tx_confirmations'=> sanitize_text_field( $_POST['confirmations'] ?? '' ),
-        '_bitrequest_tx_time'         => sanitize_text_field( $_POST['tx_time'] ?? '' ),
-        '_bitrequest_request_id'      => sanitize_text_field( $_POST['request_id'] ?? '' ),
-        '_bitrequest_pending'         => sanitize_text_field( $_POST['pending'] ?? '' ),
-        '_bitrequest_payment_id'      => sanitize_text_field( $_POST['payment_id'] ?? '' ),
+        '_bitrequest_eth_layer2'      => sanitize_text_field( wp_unslash( $_POST['eth_layer2'] ?? '' ) ),
+        '_bitrequest_cmc_id'          => sanitize_text_field( wp_unslash( $_POST['cmc_id'] ?? '' ) ),
+        '_bitrequest_status'          => sanitize_text_field( wp_unslash( $_POST['status'] ?? '' ) ),
+        '_bitrequest_tx_confirmations'=> sanitize_text_field( wp_unslash( $_POST['confirmations'] ?? '' ) ),
+        '_bitrequest_tx_time'         => sanitize_text_field( wp_unslash( $_POST['tx_time'] ?? '' ) ),
+        '_bitrequest_request_id'      => sanitize_text_field( wp_unslash( $_POST['request_id'] ?? '' ) ),
+        '_bitrequest_pending'         => sanitize_text_field( wp_unslash( $_POST['pending'] ?? '' ) ),
+        '_bitrequest_payment_id'      => sanitize_text_field( wp_unslash( $_POST['payment_id'] ?? '' ) ),
     ];
 
     foreach ( $fields as $key => $value ) {
@@ -272,7 +276,7 @@ function bitrequest_handle_verify_tx() {
         // bolt11 invoice — sent by the iframe at txdata.lightning.invoice.
         // Store it so the merchant can copy it from the order screen for
         // manual verification (paste into a node UI, decode externally, etc).
-        $bolt11 = sanitize_text_field( $_POST['bolt11'] ?? '' );
+        $bolt11 = sanitize_text_field( wp_unslash( $_POST['bolt11'] ?? '' ) );
         if ( $bolt11 !== '' ) {
             $order->update_meta_data( '_bitrequest_ln_bolt11', $bolt11 );
         }
@@ -281,7 +285,7 @@ function bitrequest_handle_verify_tx() {
     // Advance per-xpub index + record used address (only once per order)
     // Skipped for ETH-family — we don't rotate those addresses (see
     // WC_Gateway_Bitrequest::is_eth_family() docblock).
-    $paid_address = sanitize_text_field( $_POST['address'] ?? '' );
+    $paid_address = sanitize_text_field( wp_unslash( $_POST['address'] ?? '' ) );
     $is_eth_family = WC_Gateway_Bitrequest::is_eth_family( $coin );
     if ( $coin && ! $is_eth_family && ! empty( $configs[ $coin ]['xpub'] ) && $order->get_meta( '_bitrequest_xpub_index' ) === '' ) {
         // Check if index was pre-reserved at checkout page load
@@ -329,8 +333,8 @@ function bitrequest_handle_acquire_lock() {
     check_ajax_referer( 'bitrequest_checkout', 'nonce' );
 
     $order_id        = absint( $_POST['order_id'] ?? 0 );
-    $provided_secret = sanitize_text_field( $_POST['payment_secret'] ?? '' );
-    $coin            = sanitize_text_field( $_POST['coin'] ?? '' );
+    $provided_secret = sanitize_text_field( wp_unslash( $_POST['payment_secret'] ?? '' ) );
+    $coin            = sanitize_text_field( wp_unslash( $_POST['coin'] ?? '' ) );
 
     if ( ! $order_id || ! $coin ) wp_send_json_error( [ 'message' => 'Missing parameters.' ] );
 
@@ -383,8 +387,8 @@ function bitrequest_handle_release_lock() {
     check_ajax_referer( 'bitrequest_checkout', 'nonce' );
 
     $order_id        = absint( $_POST['order_id'] ?? 0 );
-    $provided_secret = sanitize_text_field( $_POST['payment_secret'] ?? '' );
-    $coin            = sanitize_text_field( $_POST['coin'] ?? '' );
+    $provided_secret = sanitize_text_field( wp_unslash( $_POST['payment_secret'] ?? '' ) );
+    $coin            = sanitize_text_field( wp_unslash( $_POST['coin'] ?? '' ) );
 
     if ( ! $order_id || ! $coin ) wp_send_json_error( [ 'message' => 'Missing parameters.' ] );
 
@@ -415,7 +419,10 @@ function bitrequest_handle_save_coin_configs() {
     $gw = WC()->payment_gateways()->payment_gateways()['bitrequest'] ?? null;
     if ( ! $gw ) wp_send_json_error( [ 'message' => 'Gateway not available.' ] );
 
-    $raw = $_POST['br_coin'] ?? [];
+    // Nonce + capability are verified above; every field is sanitized per-key inside
+    // sanitize_coin_configs_payload(), so the raw array shape must survive to that point.
+    // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+    $raw = isset( $_POST['br_coin'] ) ? wp_unslash( (array) $_POST['br_coin'] ) : [];
     if ( ! is_array( $raw ) ) {
         wp_send_json_error( [ 'message' => 'Invalid payload.' ] );
     }
@@ -429,7 +436,7 @@ function bitrequest_handle_save_coin_configs() {
     if ( isset( $_POST['show_qr'] ) ) {
         $settings = get_option( 'woocommerce_bitrequest_settings', [] );
         if ( ! is_array( $settings ) ) $settings = [];
-        $settings['show_qr'] = ( $_POST['show_qr'] === 'yes' ) ? 'yes' : 'no';
+        $settings['show_qr'] = ( sanitize_text_field( wp_unslash( $_POST['show_qr'] ) ) === 'yes' ) ? 'yes' : 'no';
         update_option( 'woocommerce_bitrequest_settings', $settings );
     }
 
@@ -655,6 +662,9 @@ add_action( 'add_meta_boxes', 'bitrequest_add_order_meta_box' );
 // status button can hit bitrequest_check_ln_status.
 add_action( 'admin_enqueue_scripts', function ( $hook ) {
     // Cover both classic-post and HPOS edit screens.
+    // phpcs:disable WordPress.Security.NonceVerification.Recommended -- read-only screen
+    // detection for asset enqueueing. No state is changed and no input is trusted; the
+    // values are cast to int / compared to literals only.
     $is_order_screen = false;
     if ( in_array( $hook, [ 'post.php', 'post-new.php' ], true ) ) {
         $is_order_screen = ( isset( $_GET['post'] ) && get_post_type( (int) $_GET['post'] ) === 'shop_order' )
@@ -678,6 +688,7 @@ add_action( 'admin_enqueue_scripts', function ( $hook ) {
     // JS gate is a no-op for non-Bitrequest orders.
     $order_id = isset( $_GET['post'] ) ? (int) $_GET['post']
               : ( isset( $_GET['id'] ) ? (int) $_GET['id'] : 0 );
+    // phpcs:enable WordPress.Security.NonceVerification.Recommended
     $br_guidance = null;
     if ( $order_id ) {
         $order = wc_get_order( $order_id );
@@ -781,8 +792,7 @@ function bitrequest_render_order_meta_box( $post_or_order ) {
     $explorer_urls = $txhash ? WC_Gateway_Bitrequest::explorer_urls( $coin, $txhash, $eth_layer2 ) : [];
 
     $defs   = WC_Gateway_Bitrequest::coin_defs();
-    $cmc    = $cmc_id ?: ( $defs[$coin][2] ?? 0 );
-    $icon   = $cmc ? "<img src='https://s2.coinmarketcap.com/static/img/coins/64x64/{$cmc}.png' style='width:18px;height:18px;border-radius:50%;vertical-align:middle;margin-right:4px'>" : '';
+    $cmc    = (int) ( $cmc_id ?: ( $defs[$coin][2] ?? 0 ) );
 
     // Format timestamp
     $tx_time_fmt = '';
@@ -791,17 +801,28 @@ function bitrequest_render_order_meta_box( $post_or_order ) {
         $tx_time_fmt = date_i18n( 'd M Y H:i', $ts );
     }
 
-    $s = '<table style="width:100%;font-size:12px;border-collapse:collapse">';
-    $row = function( $label, $value, $mono = false, $cls = '' ) use ( &$s ) {
+    echo '<table style="width:100%;font-size:12px;border-collapse:collapse">';
+    $row = function( $label, $value, $mono = false, $cls = '' ) {
         if ( $value === '' || $value === null ) return;
-        $cell = $mono ? "<code style='font-size:10px;word-break:break-all'>" . esc_html($value) . "</code>" : esc_html($value);
-        $cls_attr = $cls ? ' class="' . esc_attr($cls) . '"' : '';
-        $s .= "<tr style='border-bottom:1px solid #f0f0f0'>
-            <td style='padding:4px 4px 4px 0;color:#666;white-space:nowrap'>" . esc_html($label) . "</td>
-            <td{$cls_attr} style='padding:4px 0;text-align:right'>{$cell}</td></tr>";
+        echo '<tr style="border-bottom:1px solid #f0f0f0">'
+           . '<td style="padding:4px 4px 4px 0;color:#666;white-space:nowrap">' . esc_html( $label ) . '</td>'
+           . '<td class="' . esc_attr( $cls ) . '" style="padding:4px 0;text-align:right">';
+        if ( $mono ) {
+            echo '<code style="font-size:10px;word-break:break-all">' . esc_html( $value ) . '</code>';
+        } else {
+            echo esc_html( $value );
+        }
+        echo '</td></tr>';
     };
 
-    if ( $coin )     $s .= "<tr style='border-bottom:1px solid #f0f0f0'><td style='padding:4px 4px 4px 0;color:#666'>Coin</td><td style='padding:4px 0;text-align:right'>{$icon}" . esc_html( strtoupper($coin) ) . "</td></tr>";
+    if ( $coin ) {
+        echo '<tr style="border-bottom:1px solid #f0f0f0"><td style="padding:4px 4px 4px 0;color:#666">Coin</td>'
+           . '<td style="padding:4px 0;text-align:right">';
+        if ( $cmc ) {
+            echo '<img src="' . esc_url( "https://s2.coinmarketcap.com/static/img/coins/64x64/{$cmc}.png" ) . '" alt="" style="width:18px;height:18px;border-radius:50%;vertical-align:middle;margin-right:4px">';
+        }
+        echo esc_html( strtoupper( $coin ) ) . '</td></tr>';
+    }
     // Tag the Status value cell so JS can live-update it after a Lightning
     // status check (no full page reload needed to flip pending→paid).
     $row( 'Status',       $status, false, 'br-meta-status' );
@@ -817,10 +838,15 @@ function bitrequest_render_order_meta_box( $post_or_order ) {
     // fulfillment statuses (pending / on-hold / failed) keep the guidance.
     $pre_fulfillment = in_array( $order->get_status(), [ 'pending', 'on-hold', 'failed' ], true );
     if ( $pre_fulfillment ) {
-        $guidance_html = ( $req_confs === 0 )
-            ? "<span style='color:#46b450'>✓ Instant — safe to fulfill</span>"
-            : "<span style='color:#b06800'>⏳ Wait for {$req_confs} confirmation" . ( $req_confs === 1 ? '' : 's' ) . "</span>";
-        $s .= "<tr style='border-bottom:1px solid #f0f0f0'><td style='padding:4px 4px 4px 0;color:#666'></td><td style='padding:4px 0;text-align:right;font-size:11px'>{$guidance_html}</td></tr>";
+        echo '<tr style="border-bottom:1px solid #f0f0f0"><td style="padding:4px 4px 4px 0;color:#666"></td>'
+           . '<td style="padding:4px 0;text-align:right;font-size:11px">';
+        if ( $req_confs === 0 ) {
+            echo '<span style="color:#46b450">✓ Instant — safe to fulfill</span>';
+        } else {
+            echo '<span style="color:#b06800">⏳ Wait for ' . esc_html( (string) $req_confs )
+               . ' confirmation' . ( $req_confs === 1 ? '' : 's' ) . '</span>';
+        }
+        echo '</td></tr>';
     }
     $row( 'Amount',       $ccval ? "{$ccval} " . strtoupper($symbol) : '' );
     $row( 'Fiat',         $fiat && $currency ? "{$fiat} {$currency}" : '' );
@@ -838,12 +864,11 @@ function bitrequest_render_order_meta_box( $post_or_order ) {
     // Address (truncated, full on hover)
     if ( $address ) {
         $short = strlen($address) > 22 ? substr($address,0,10).'…'.substr($address,-6) : $address;
-        $s .= "<tr style='border-bottom:1px solid #f0f0f0'><td style='padding:4px 4px 4px 0;color:#666'>Address</td>
-            <td style='padding:4px 0;text-align:right'><span title='" . esc_attr($address) . "' style='cursor:default'>" . esc_html($short) . "</span></td></tr>";
+        echo '<tr style="border-bottom:1px solid #f0f0f0"><td style="padding:4px 4px 4px 0;color:#666">Address</td>'
+           . '<td style="padding:4px 0;text-align:right"><span title="' . esc_attr( $address ) . '" style="cursor:default">'
+           . esc_html( $short ) . '</span></td></tr>';
     }
-    $s .= '</table>';
-
-    echo $s;
+    echo '</table>';
 
     // TX hash — full copyable field
     if ( $txhash ) {
@@ -864,7 +889,7 @@ function bitrequest_render_order_meta_box( $post_or_order ) {
         // mempool.space + blockchair for Bitcoin).
         foreach ( $explorer_urls as $i => $exp ) {
             $margin = ( $i === 0 ) ? '6px' : '4px';
-            echo '<p style="margin:' . $margin . ' 0 0"><a href="' . esc_url( $exp['url'] ) . '" target="_blank" rel="noopener" class="button button-small" title="' . esc_attr( $exp['url'] ) . '" style="width:100%;text-align:center">🔍 View on ' . esc_html( $exp['host'] ) . '</a></p>';
+            echo '<p style="margin:' . esc_attr( $margin ) . ' 0 0"><a href="' . esc_url( $exp['url'] ) . '" target="_blank" rel="noopener" class="button button-small" title="' . esc_attr( $exp['url'] ) . '" style="width:100%;text-align:center">🔍 View on ' . esc_html( $exp['host'] ) . '</a></p>';
         }
 
         // Lightning: bolt11 invoice + status-lookup button.
@@ -913,9 +938,15 @@ add_action( 'admin_footer', 'bitrequest_inject_payment_page_icons' );
 
 function bitrequest_inject_payment_page_icons() {
     // Only on the checkout overview tab — NOT on the individual gateway settings page
-    if ( ( $_GET['page'] ?? '' ) !== 'wc-settings' ) return;
-    if ( ( $_GET['tab'] ?? '' ) !== 'checkout' ) return;
-    if ( ! empty( $_GET['section'] ) ) return; // settings page has ?section=bitrequest
+    // phpcs:disable WordPress.Security.NonceVerification.Recommended
+    // -- read-only admin screen detection, compared against string literals only.
+    $br_page    = isset( $_GET['page'] ) ? sanitize_text_field( wp_unslash( $_GET['page'] ) ) : '';
+    $br_tab     = isset( $_GET['tab'] ) ? sanitize_text_field( wp_unslash( $_GET['tab'] ) ) : '';
+    $br_section = isset( $_GET['section'] ) ? sanitize_text_field( wp_unslash( $_GET['section'] ) ) : '';
+    // phpcs:enable WordPress.Security.NonceVerification.Recommended
+    if ( $br_page !== 'wc-settings' ) return;
+    if ( $br_tab !== 'checkout' ) return;
+    if ( $br_section !== '' ) return; // settings page has ?section=bitrequest
 
     $defs  = WC_Gateway_Bitrequest::coin_defs();
     $coins = [ 'bitcoin', 'lightning', 'litecoin', 'dogecoin', 'dash', 'nano', 'ethereum', 'bitcoin-cash', 'monero', 'kaspa', 'nimiq' ];
@@ -1023,24 +1054,22 @@ function bitrequest_echo_order_column_content( WC_Order $order ): void {
     $coin    = $order->get_meta( '_bitrequest_payment' ) ?: '';
     $txhash  = $order->get_meta( '_bitrequest_txhash' )  ?: '';
     $defs    = WC_Gateway_Bitrequest::coin_defs();
-    $cmc_id  = $order->get_meta( '_bitrequest_cmc_id' ) ?: ( isset( $defs[$coin] ) ? $defs[$coin][2] : 0 );
+    $cmc_id  = (int) ( $order->get_meta( '_bitrequest_cmc_id' ) ?: ( isset( $defs[$coin] ) ? $defs[$coin][2] : 0 ) );
 
     // Always show the Bitrequest icon for any Bitrequest order
-    $br_icon = "<img src='" . esc_url( BITREQUEST_WC_URL . 'assets/img/bitrequest-icon.png' ) . "' "
-             . "style='width:16px;height:16px;vertical-align:middle;border-radius:3px' title='Bitrequest'>";
+    echo '<span style="white-space:nowrap;display:flex;align-items:center;gap:4px;justify-content:center">';
 
-    // If coin known, show coin icon instead
+    // Coin icon when known, else the Bitrequest mark (payment still pending).
     if ( $coin && $cmc_id ) {
-        $coin_icon = "<img src='https://s2.coinmarketcap.com/static/img/coins/64x64/{$cmc_id}.png' "
-                   . "style='width:18px;height:18px;border-radius:50%;vertical-align:middle' "
-                   . "alt='" . esc_attr( strtoupper( $coin ) ) . "' title='" . esc_attr( strtoupper( $coin ) ) . "'>";
+        echo '<img src="' . esc_url( "https://s2.coinmarketcap.com/static/img/coins/64x64/{$cmc_id}.png" ) . '"'
+           . ' style="width:18px;height:18px;border-radius:50%;vertical-align:middle"'
+           . ' alt="' . esc_attr( strtoupper( $coin ) ) . '" title="' . esc_attr( strtoupper( $coin ) ) . '">';
     } elseif ( $coin ) {
-        $coin_icon = "<span style='font-size:10px;color:#666;font-weight:600'>" . esc_html( strtoupper( $coin ) ) . "</span>";
+        echo '<span style="font-size:10px;color:#666;font-weight:600">' . esc_html( strtoupper( $coin ) ) . '</span>';
     } else {
-        $coin_icon = $br_icon; // pending — no coin selected yet
+        echo '<img src="' . esc_url( BITREQUEST_WC_URL . 'assets/img/bitrequest-icon.png' ) . '"'
+           . ' style="width:16px;height:16px;vertical-align:middle;border-radius:3px" title="Bitrequest" alt="Bitrequest">';
     }
-
-    echo "<span style='white-space:nowrap;display:flex;align-items:center;gap:4px;justify-content:center'>{$coin_icon}";
 
     if ( $txhash ) {
         $l2        = $order->get_meta( '_bitrequest_eth_layer2' ) ?: '';
@@ -1121,13 +1150,13 @@ function bitrequest_email_payment_details( $order, $sent_to_admin, $plain_text, 
     if ( $plain_text ) {
         echo "\n\n----------\n";
         if ( $amount !== '' ) {
-            echo 'Amount paid: ' . $amount;
-            if ( $symbol !== '' ) echo ' ' . $symbol;
+            echo 'Amount paid: ' . esc_html( $amount );
+            if ( $symbol !== '' ) echo ' ' . esc_html( $symbol );
             echo "\n";
         }
         if ( $txhash !== '' ) {
-            echo 'Transaction: ' . $txhash . "\n";
-            if ( $exp_url ) echo $exp_url . "\n";
+            echo 'Transaction: ' . esc_html( $txhash ) . "\n";
+            if ( $exp_url ) echo esc_url( $exp_url ) . "\n";
         }
         echo "----------\n\n";
     } else {
@@ -1193,7 +1222,11 @@ function bitrequest_order_details_coin_badge( WC_Order $order ): void {
     $meta_name  = $order->get_meta( '_bitrequest_currency_name' )  ?: '';
     $label      = $meta_name ?: $cfg_label;
     $symbol     = $meta_sym  ? strtoupper( $meta_sym ) : $cfg_symbol;
-    $cmc_id     = $order->get_meta( '_bitrequest_cmc_id' ) ?: $cfg_cmc_id;
-    $icon       = $cmc_id ? "<img src='https://s2.coinmarketcap.com/static/img/coins/64x64/{$cmc_id}.png' style='width:20px;height:20px;border-radius:50%;vertical-align:middle;margin-right:6px'>" : '';
-    echo "<p style='margin:8px 0;font-size:14px'><strong>Paid with:</strong> {$icon}" . esc_html( "{$label} ({$symbol})" ) . "</p>";
+    $cmc_id     = (int) ( $order->get_meta( '_bitrequest_cmc_id' ) ?: $cfg_cmc_id );
+    echo '<p style="margin:8px 0;font-size:14px"><strong>Paid with:</strong> ';
+    if ( $cmc_id ) {
+        echo '<img src="' . esc_url( "https://s2.coinmarketcap.com/static/img/coins/64x64/{$cmc_id}.png" ) . '" alt=""'
+           . ' style="width:20px;height:20px;border-radius:50%;vertical-align:middle;margin-right:6px">';
+    }
+    echo esc_html( "{$label} ({$symbol})" ) . '</p>';
 }

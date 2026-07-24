@@ -804,7 +804,11 @@ class WC_Gateway_Bitrequest extends WC_Payment_Gateway {
 
 public function process_admin_options() {
         parent::process_admin_options();
-        $raw = $_POST['br_coin'] ?? [];
+        // WooCommerce verifies its own settings nonce before invoking this callback, and
+        // every field is sanitized per-key in sanitize_coin_configs_payload() below.
+        // phpcs:disable WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+        $raw = isset( $_POST['br_coin'] ) ? wp_unslash( (array) $_POST['br_coin'] ) : [];
+        // phpcs:enable WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
         if ( ! is_array( $raw ) ) $raw = [];
         update_option( 'bitrequest_coin_configs', $this->sanitize_coin_configs_payload( $raw ) );
     }
@@ -1140,13 +1144,13 @@ public function process_admin_options() {
         $br_base = $this->get_br_base();
 
         // Bitrequest PWA libs (in dependency order)
-        wp_enqueue_script( 'br-sjcl',         $br_base . 'assets/js/lib/sjcl.js',                 [],          null, true );
-        wp_enqueue_script( 'br-crypto-utils',  $br_base . 'assets/js/lib/crypto_utils.js',          ['br-sjcl'], null, true );
-        wp_enqueue_script( 'br-bip39-utils',   $br_base . 'assets/js/lib/bip39_utils.js',           ['br-crypto-utils'], null, true );
-        wp_enqueue_script( 'br-xmr-utils',     $br_base . 'assets/js/lib/xmr_utils.js',             ['br-crypto-utils'], null, true );
-        wp_enqueue_script( 'br-assets',        $br_base . 'assets/js/bitrequest/assets.js',         [], null, true );
-        wp_enqueue_script( 'br-checkout-lib',  $br_base . 'assets_js_lib_bitrequest_checkout.js',   [], null, true );
-        wp_enqueue_style(  'br-checkout-css',  $br_base . 'assets_styles_lib_bitrequest.css',       [], null );
+        wp_enqueue_script( 'br-sjcl',         $br_base . 'assets/js/lib/sjcl.js',                 [],          BITREQUEST_WC_VERSION, true );
+        wp_enqueue_script( 'br-crypto-utils',  $br_base . 'assets/js/lib/crypto_utils.js',          ['br-sjcl'], BITREQUEST_WC_VERSION, true );
+        wp_enqueue_script( 'br-bip39-utils',   $br_base . 'assets/js/lib/bip39_utils.js',           ['br-crypto-utils'], BITREQUEST_WC_VERSION, true );
+        wp_enqueue_script( 'br-xmr-utils',     $br_base . 'assets/js/lib/xmr_utils.js',             ['br-crypto-utils'], BITREQUEST_WC_VERSION, true );
+        wp_enqueue_script( 'br-assets',        $br_base . 'assets/js/bitrequest/assets.js',         [], BITREQUEST_WC_VERSION, true );
+        wp_enqueue_script( 'br-checkout-lib',  $br_base . 'assets_js_lib_bitrequest_checkout.js',   [], BITREQUEST_WC_VERSION, true );
+        wp_enqueue_style(  'br-checkout-css',  $br_base . 'assets_styles_lib_bitrequest.css',       [], BITREQUEST_WC_VERSION );
 
         // Plugin assets
         wp_enqueue_style(  'bitrequest-checkout', BITREQUEST_WC_URL . 'assets/css/bitrequest-checkout.css', ['br-checkout-css'], BITREQUEST_WC_VERSION );
@@ -1227,14 +1231,14 @@ public function process_admin_options() {
         if ( strpos( $hook, 'wc-settings' ) === false && strpos( $hook, 'woocommerce_page' ) === false ) return;
 
         $br_base = $this->get_br_base();
-        wp_enqueue_script( 'br-sjcl',        $br_base . 'assets/js/lib/sjcl.js',       [], null, true );
-        wp_enqueue_script( 'br-crypto-utils', $br_base . 'assets/js/lib/crypto_utils.js', ['br-sjcl'], null, true );
-        wp_enqueue_script( 'br-bip39-utils',  $br_base . 'assets/js/lib/bip39_utils.js', ['br-crypto-utils'], null, true );
-        wp_enqueue_script( 'br-xmr-utils',    $br_base . 'assets/js/lib/xmr_utils.js',   ['br-crypto-utils'], null, true );
-        wp_enqueue_script( 'br-assets',       $br_base . 'assets/js/bitrequest/assets.js', [], null, true );
+        wp_enqueue_script( 'br-sjcl',        $br_base . 'assets/js/lib/sjcl.js',       [], BITREQUEST_WC_VERSION, true );
+        wp_enqueue_script( 'br-crypto-utils', $br_base . 'assets/js/lib/crypto_utils.js', ['br-sjcl'], BITREQUEST_WC_VERSION, true );
+        wp_enqueue_script( 'br-bip39-utils',  $br_base . 'assets/js/lib/bip39_utils.js', ['br-crypto-utils'], BITREQUEST_WC_VERSION, true );
+        wp_enqueue_script( 'br-xmr-utils',    $br_base . 'assets/js/lib/xmr_utils.js',   ['br-crypto-utils'], BITREQUEST_WC_VERSION, true );
+        wp_enqueue_script( 'br-assets',       $br_base . 'assets/js/bitrequest/assets.js', [], BITREQUEST_WC_VERSION, true );
         // Checkout lib + CSS for Test button → request panel overlay
-        wp_enqueue_script( 'br-checkout-lib', $br_base . 'assets_js_lib_bitrequest_checkout.js', [], null, true );
-        wp_enqueue_style(  'br-checkout-css', $br_base . 'assets_styles_lib_bitrequest.css',     [], null );
+        wp_enqueue_script( 'br-checkout-lib', $br_base . 'assets_js_lib_bitrequest_checkout.js', [], BITREQUEST_WC_VERSION, true );
+        wp_enqueue_style(  'br-checkout-css', $br_base . 'assets_styles_lib_bitrequest.css',     [], BITREQUEST_WC_VERSION );
         wp_enqueue_script( 'bitrequest-derive', BITREQUEST_WC_URL . 'assets/js/bitrequest-derive.js',
             [ 'br-bip39-utils', 'br-crypto-utils' ], BITREQUEST_WC_VERSION, true );
         wp_enqueue_script( 'bitrequest-admin', BITREQUEST_WC_URL . 'assets/js/bitrequest-admin.js',
