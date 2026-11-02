@@ -114,6 +114,7 @@
     const isErc20Token    = window.BitrequestDerive.isErc20Token;
     const isEthFamily     = window.BitrequestDerive.isEthFamily;
     const coinHasL2Select = window.BitrequestDerive.coinHasL2Select;
+    const encodeRequestData = window.BitrequestDerive.encodeRequestData;
 
     // Coins that accept xpub/zpub/kpub in the address field.
     // Plain-address coins (monero, nano, nimiq, lightning) reject xpub input.
@@ -965,7 +966,7 @@
             + "&uoa="     + encodeURIComponent(uoa)
             + "&amount=1"
             + "&address=" + encodeURIComponent(address)
-            + "&d="       + btoa(JSON.stringify(d_obj)).replace(/=+$/, "")
+            + "&d="       + encodeRequestData(d_obj)
             + "&exact=true"
             + (show_qr ? "&showqr=true" : "");
     }

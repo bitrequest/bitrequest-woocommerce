@@ -559,7 +559,14 @@ class WC_Gateway_Bitrequest extends WC_Payment_Gateway {
                 'type'        => 'text',
                 'default'     => '',
                 'desc_tip'    => true,
-                'description' => 'Optional. URL to receive a POST with full transaction data when a payment is detected. Receives JSON with order and txdata.',
+                'description' => 'Optional. URL to receive a JSON POST with order and transaction data when the customer\'s browser reports a payment. The data is unverified ("verified": false): the order stays on hold until you check the transaction on-chain.',
+            ],
+            'webhook_secret' => [
+                'title'       => 'Webhook secret',
+                'type'        => 'password',
+                'default'     => '',
+                'desc_tip'    => true,
+                'description' => 'Optional, 32+ random characters. Each webhook then carries an X-Bitrequest-Signature header (sha256=HMAC-SHA256 of the raw body) so your endpoint can reject requests that did not come from this shop.',
             ],
             'show_qr' => [
                 'title'       => 'Show QR',
@@ -1158,7 +1165,7 @@ public function process_admin_options() {
             'uoa'            => strtolower( get_woocommerce_currency() ),
             'amount'         => $order->get_total(),
             'order_number'   => $order->get_order_number(),
-            'store_name'     => get_bloginfo( 'name' ),
+            'store_name'     => wp_specialchars_decode( get_bloginfo( 'name' ), ENT_QUOTES ),
             'show_qr'        => $this->get_option( 'show_qr', 'no' ) === 'yes',
             'coins'          => $coin_data,
             'locked_coins'   => $locked_coins,
@@ -1187,7 +1194,7 @@ public function process_admin_options() {
             'nonce'      => wp_create_nonce( 'bitrequest_admin' ),
             'br_url'     => $this->get_br_url(),
             'uoa'        => strtolower( get_woocommerce_currency() ),
-            'store_name' => get_bloginfo( 'name' ),
+            'store_name' => wp_specialchars_decode( get_bloginfo( 'name' ), ENT_QUOTES ),
             'show_qr'    => $this->get_option( 'show_qr', 'no' ) === 'yes',
         ] );
     }

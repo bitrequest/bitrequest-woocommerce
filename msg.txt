@@ -1,0 +1,14 @@
+Release 0.1.1: UTF-8 request data, signed webhooks, one tx per order
+
+- Encode the d param as UTF-8 via a shared encodeRequestData() in
+  bitrequest-derive.js; btoa() threw on store names outside Latin-1,
+  which broke checkout and the admin Test buttons
+- Decode HTML entities in the store name before passing it to the PWA
+- verify_tx: one recorded transaction per order on hold. A retry with
+  the same txhash is a no-op, a different txhash is refused. Stops
+  txhash replacement and repeated webhooks
+- Webhook: add "verified": false and sent_at; optional webhook secret
+  signs requests with X-Bitrequest-Signature (HMAC-SHA256 of the body)
+- Build the checkout coin preview with DOM nodes instead of innerHTML
+- README: document the webhook payload and signature check
+- Bump to 0.1.1, tested up to WordPress 7.1

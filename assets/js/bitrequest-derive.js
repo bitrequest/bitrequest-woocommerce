@@ -87,6 +87,16 @@
         }
     }
 
+    // Base64 of the request data (`d` param) as UTF-8. Plain btoa() throws on
+    // anything outside Latin-1 (a store name with €, 中 or an emoji); the PWA
+    // decodes UTF-8 with a Latin-1 fallback. Padding stripped, as before.
+    function encodeRequestData(obj) {
+        const bytes = new TextEncoder().encode(JSON.stringify(obj));
+        let binary = "";
+        for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+        return btoa(binary).replace(/=+$/, "");
+    }
+
     // Expose as a global namespace. Not using ES modules because the plugin
     // loads plain <script> tags alongside the PWA libs.
     window.BitrequestDerive = {
@@ -94,6 +104,7 @@
         isXpubLike:         isXpubLike,
         isErc20Token:       isErc20Token,
         coinHasL2Select:    coinHasL2Select,
-        isEthFamily:        isEthFamily
+        isEthFamily:        isEthFamily,
+        encodeRequestData:  encodeRequestData
     };
 })();

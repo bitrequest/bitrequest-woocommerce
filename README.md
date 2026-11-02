@@ -168,7 +168,53 @@ Bitrequest is open-source and built around a payment PWA at [bitrequest.io](http
 
 **Self-hosting the PWA.** The Bitrequest URL field in the plugin settings can point at any host serving an unmodified Bitrequest PWA build — github.io is the default, but you can host your own copy on Firebase, IPFS, Arweave, or any web server. The plugin's libraries automatically load from whichever origin you configure.
 
-**Webhook endpoint.** Configure the Webhook URL field in the gateway settings to receive a JSON POST when payments are detected. Useful for triggering external order processing, accounting integrations, or fulfillment scripts. See the [webhook integration guide](https://github.com/bitrequest/webshop-integration) for the payload format.
+**Webhook endpoint.** Configure the Webhook URL field in the gateway settings to receive a JSON POST when the customer's browser reports a payment (once per order). Useful for notifications, accounting integrations or queueing fulfilment. The data is **not verified**: the order is on hold until you check the transaction on-chain, so don't ship from the webhook alone.
+
+```json
+{
+  "event": "bitrequest_payment",
+  "verified": false,
+  "sent_at": 1793637138,
+  "order_id": 123,
+  "order_number": "123",
+  "order_status": "on-hold",
+  "order_total": "25.00",
+  "currency": "EUR",
+  "txdata": {
+    "payment": "nano",
+    "txhash": "5DFB3A9B…",
+    "address": "nano_3bfq…",
+    "crypto_amount": "0.093242",
+    "fiat_amount": "25",
+    "received_amount": "0.093242",
+    "ccsymbol": "xno",
+    "currency_name": "Euro",
+    "eth_layer2": "",
+    "cmc_id": "1567",
+    "status": "paid",
+    "tx_confirmations": "0",
+    "tx_time": "1793637138495",
+    "request_id": "cfe865550e",
+    "pending": "polling",
+    "payment_id": "6f1c…"
+  }
+}
+```
+
+Set a Webhook secret (32+ random characters) and each request carries `X-Bitrequest-Signature: sha256=<HMAC-SHA256 of the raw body>`. Verify it before using the data:
+
+```php
+$body      = file_get_contents( 'php://input' );
+$expected  = 'sha256=' . hash_hmac( 'sha256', $body, WEBHOOK_SECRET );
+$signature = $_SERVER['HTTP_X_BITREQUEST_SIGNATURE'] ?? '';
+if ( ! hash_equals( $expected, $signature ) ) {
+    http_response_code( 403 );
+    exit;
+}
+$event = json_decode( $body, true ); // optionally reject stale sent_at values
+```
+
+This is a different payload from the browser relay in the [static-site reference implementation](https://github.com/bitrequest/webshop-integration); its `webhook/index.php` template won't accept these requests.
 
 **Lightning proxy.** The plugin supports LND, Core Lightning, LNbits, Spark, and Nostr Wallet Connect via a single PHP proxy spec. The proxy server is included in the [main Bitrequest repository](https://github.com/bitrequest/bitrequest.github.io).
 

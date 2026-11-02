@@ -9,8 +9,9 @@
     if (!p) return;
 
     // Shared helpers (from bitrequest-derive.js)
-    const isErc20Token    = window.BitrequestDerive.isErc20Token;
-    const coinHasL2Select = window.BitrequestDerive.coinHasL2Select;
+    const isErc20Token      = window.BitrequestDerive.isErc20Token;
+    const coinHasL2Select   = window.BitrequestDerive.coinHasL2Select;
+    const encodeRequestData = window.BitrequestDerive.encodeRequestData;
 
     const dropdown = document.getElementById("br-dropdown"),
           trigger  = document.getElementById("br-dropdown-trigger"),
@@ -185,8 +186,20 @@
         // from a previous coin) — the new selection is a fresh attempt.
         if (noticeEl) noticeEl.style.display = "none";
         items.forEach((i) => i.classList.toggle("br-selected", i.dataset.coin === coin));
-        preview.innerHTML = (icon ? "<img src='" + icon + "' alt=''> " : "") +
-            "<strong>" + label + "</strong> <span>" + symbol + "</span>";
+        // Built as nodes: dataset values come back entity-decoded, so string
+        // concatenation into innerHTML would turn them into markup.
+        const strong = document.createElement("strong"),
+              sym    = document.createElement("span");
+        strong.textContent = label;
+        sym.textContent    = symbol;
+        preview.textContent = "";
+        if (icon) {
+            const img = document.createElement("img");
+            img.src = icon;
+            img.alt = "";
+            preview.append(img, " ");
+        }
+        preview.append(strong, " ", sym);
         payBtn.classList.remove("br_checkout");
         payBtn.setAttribute("href", "#");
         payBtn.textContent = "Resolving address…";
@@ -376,7 +389,7 @@
             + "&uoa="     + encodeURIComponent(p.uoa)
             + "&amount="  + encodeURIComponent(p.amount)
             + "&address=" + encodeURIComponent(address)
-            + "&d="       + btoa(JSON.stringify(d_obj)).replace(/=+$/, "")
+            + "&d="       + encodeRequestData(d_obj)
             + "&exact=true"
             + (p.show_qr ? "&showqr=true" : "");
     }

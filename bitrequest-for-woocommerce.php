@@ -3,7 +3,7 @@
  * Plugin Name: Bitrequest for WooCommerce
  * Plugin URI:  https://github.com/bitrequest/bitrequest-woocommerce
  * Description: Accept cryptocurrency payments via Bitrequest. Non-custodial, multi-coin, HD wallet (xpub) support with frontend derivation.
- * Version:     0.1.0
+ * Version:     0.1.1
  * Author:      Bitrequest
  * Author URI:  https://bitrequest.io
  * License:     GPLv2 or later
@@ -17,7 +17,7 @@
  */
 if ( ! defined( 'ABSPATH' ) ) exit;
 
-define( 'BITREQUEST_WC_VERSION', '0.1.0' );
+define( 'BITREQUEST_WC_VERSION', '0.1.1' );
 define( 'BITREQUEST_WC_PATH', plugin_dir_path( __FILE__ ) );
 define( 'BITREQUEST_WC_URL', plugin_dir_url( __FILE__ ) );
 
@@ -139,6 +139,20 @@ function bitrequest_handle_verify_tx() {
     $stored_secret = $order->get_meta( '_bitrequest_payment_secret' );
     if ( ! $stored_secret || ! hash_equals( $stored_secret, $provided_secret ) ) {
         wp_send_json_error( [ 'message' => 'Invalid payment secret.' ] );
+    }
+
+    // ── One recorded transaction per order ──────────────────────────────────
+    // Once a transaction is recorded the order is on-hold. A retry with the
+    // same txhash succeeds without side effects (no second webhook, note or
+    // status change); a different txhash is refused. If the merchant puts the
+    // order back to pending/failed so the customer can pay again, it needs
+    // payment again and a new transaction is accepted.
+    $recorded_txhash = (string) $order->get_meta( '_bitrequest_txhash' );
+    if ( $recorded_txhash !== '' && ! $order->needs_payment() ) {
+        if ( hash_equals( $recorded_txhash, $txhash ) ) {
+            wp_send_json_success( [ 'status' => 'manual_review' ] );
+        }
+        wp_send_json_error( [ 'message' => 'A transaction is already recorded for this order.' ] );
     }
 
     $gw      = WC()->payment_gateways()->payment_gateways()['bitrequest'] ?? null;
@@ -626,6 +640,10 @@ function bitrequest_send_webhook( WC_Order $order, array $txdata ) {
 
     $payload = [
         'event'        => 'bitrequest_payment',
+        // Reported by the customer's browser: the order is on-hold until the
+        // merchant verifies the transaction on-chain. Never fulfil from this.
+        'verified'     => false,
+        'sent_at'      => time(),
         'order_id'     => $order->get_id(),
         'order_number' => $order->get_order_number(),
         'order_status' => $order->get_status(),
@@ -637,9 +655,18 @@ function bitrequest_send_webhook( WC_Order $order, array $txdata ) {
         ),
     ];
 
+    $body    = wp_json_encode( $payload );
+    $headers = [ 'Content-Type' => 'application/json' ];
+    // HMAC-SHA256 of the raw body, so the receiver can tell this request
+    // came from the shop (same idea as the proxy callback token).
+    $secret = (string) $gw->get_option( 'webhook_secret', '' );
+    if ( $secret !== '' ) {
+        $headers['X-Bitrequest-Signature'] = 'sha256=' . hash_hmac( 'sha256', $body, $secret );
+    }
+
     wp_remote_post( $url, [
-        'body'        => wp_json_encode( $payload ),
-        'headers'     => [ 'Content-Type' => 'application/json' ],
+        'body'        => $body,
+        'headers'     => $headers,
         'timeout'     => 10,
         'blocking'    => false, // fire and forget
     ] );

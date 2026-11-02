@@ -2,9 +2,9 @@
 Contributors: bitrequest
 Tags: cryptocurrency, bitcoin, lightning, monero, payment gateway
 Requires at least: 5.8
-Tested up to: 7.0
+Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 0.1.0
+Stable tag: 0.1.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -27,7 +27,7 @@ Bitcoin, Lightning Network, Litecoin, Dogecoin, Dash, Bitcoin Cash, Kaspa, Moner
 * No account, no sign-up, no KYC.
 * HD wallet (xpub) support — a fresh receiving address for every order.
 * Per-order payment verification with block-explorer links and confirmation guidance.
-* Optional webhook (JSON POST) when a payment is detected.
+* Optional webhook (JSON POST, HMAC-signed) when a payment is reported.
 * Compatible with WooCommerce HPOS and the Block Checkout, as well as classic checkout.
 
 Source code: https://github.com/bitrequest/bitrequest-woocommerce
@@ -64,7 +64,7 @@ Only used if you enable Lightning. The plugin sends invoice status lookups to th
 
 **4. Webhook URL (optional, merchant-configured)**
 
-If you set a Webhook URL, the plugin POSTs order and transaction data to that address when a payment is detected. This is your own endpoint; leave the field empty and no request is made.
+If you set a Webhook URL, the plugin POSTs order and transaction data to that address when the customer's browser reports a payment (once per order). This is your own endpoint; leave the field empty and no request is made. With a Webhook secret set, each request carries an X-Bitrequest-Signature header your endpoint can verify. The data is not verified on-chain; the order stays on hold until you check it.
 
 **Note on block explorers**
 
@@ -116,10 +116,22 @@ The plugin shows a recommended confirmation count per coin on each order and lin
 
 == Changelog ==
 
+= 0.1.1 =
+* Fix: checkout no longer fails for store names with characters outside Latin-1 (e.g. €, emoji, non-Latin scripts).
+* Fix: HTML entities in the store name (e.g. &amp;) are decoded before they are sent to the payment app.
+* Security: optional webhook secret; webhooks are signed with an X-Bitrequest-Signature header (HMAC-SHA256).
+* Security: webhook payload marks the data as unverified ("verified": false).
+* Security: a recorded transaction can't be replaced or re-sent for an order on hold; a retry with the same transaction is a no-op.
+* Hardening: the coin preview at checkout is built without innerHTML.
+* Tested with WordPress 7.1.
+
 = 0.1.0 =
 * Initial public release.
 
 == Upgrade Notice ==
+
+= 0.1.1 =
+Fixes checkout for store names with non-Latin characters and adds optional webhook signing.
 
 = 0.1.0 =
 Initial public release.
